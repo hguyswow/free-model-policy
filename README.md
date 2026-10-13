@@ -18,3 +18,8 @@ hermes config set model.provider "opencode-go"
 ```
 
 See `SKILL.md` for the full ranking, Muse token discipline, and cron wiring.
+
+## Remotes
+
+- GitHub: `https://github.com/hguyswow/free-model-policy.git`
+- NAS (personal): `ssh://aibackup@hguyswow.asuscomm.com:28/volume5/dev/git/free-model-policy.git`
