@@ -17,7 +17,15 @@ hermes config set model.default "muse-spark-1.3-contributor"
 hermes config set model.provider "opencode-go"
 ```
 
-See `SKILL.md` for the full ranking, Muse token discipline, and cron wiring.
+Apply ranking -> default model + fallback chain (run with the Hermes venv python, needs ruamel.yaml):
+
+```
+python apply_model_policy.py --dry-run
+python apply_model_policy.py
+hermes fallback list
+```
+
+See `SKILL.md` for the full ranking, Muse token discipline, the data-training note on `*-contributor`, and cron wiring.
 
 ## Remotes
 

@@ -1,7 +1,7 @@
 ---
 name: free-model-policy
 description: 'Use when choosing free AI models. Enforce zero-cost rule.'
-version: 1.0.0
+version: 1.1.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
@@ -27,7 +27,8 @@ Zero-cost model discipline for Hermes agents running on OpenRouter + OpenCode Go
 - Prefer highest-benchmark free model, never newest-by-date alone; latest `last_updated` is only a tiebreaker.
 - Treat OpenRouter `:free`-suffixed IDs as the only strict-free set; anything with nonzero cost is paid even if cheap.
 - Treat `muse-spark-1.3-contributor` on OpenCode Go as plan-included (no extra metered charge inside Go limits), not as strict $0; keep it separate from `-free` models.
-- Switch with `hermes config set model.default "<id>"` plus `hermes config set model.provider "<provider>"`, then verify with `hermes config get model.default` and `hermes status`.
+- Apply the ranking with `apply_model_policy.py` (Hermes venv python): it sets the default model **and** a `fallback_providers` chain that alternates OpenRouter and OpenCode, so a 429 on one provider never stalls crons or the gateway. Verify with `hermes fallback list`.
+- A ranking file alone changes nothing: without `fallback_providers` Hermes fails outright on a rate limit.
 - Refresh the ranking daily from `models_dev_cache.json` via `fetch_models_dev(force_refresh=True)`; ETag makes it cheap when unchanged.
 - Never store API keys, tokens, or `sk-*` values inside this skill, snapshots, or git repos.
 
@@ -40,6 +41,7 @@ Zero-cost model discipline for Hermes agents running on OpenRouter + OpenCode Go
 - OpenRouter coding fallback `cohere/north-mini-code:free` for practical software edits.
 - OpenCode strict-free 1st `longcat-2.5-preview-free` (Unlimited, limited-time), 2nd `space-bunny-free`, 3rd `step-5-preview-free`.
 - OpenCode Go workhorse `muse-spark-1.3-contributor` because SWE ~77.4-class with generous limits (45,300 req/5h, $60 monthly meter).
+- `*-contributor` is a **data-training tier**: OpenCode may train on prompts/completions. Hermes refuses it in unattended runs unless `security.allow_data_training_tiers_noninteractive: true`; that opt-in is the owner's decision (business documents would become training data). `apply_model_policy.py` includes Muse in the chain only when that flag is set.
 
 ## Muse token discipline (avoid 429/limit hits)
 
@@ -48,10 +50,11 @@ Zero-cost model discipline for Hermes agents running on OpenRouter + OpenCode Go
 - Offload bulk/low-value work to Unlimited strict-free models (`longcat-2.5-preview-free`, `space-bunny-free`).
 - On 429/limit, switch immediately to a strict-free model, then check remaining quota in the OpenCode console.
 - Keep `Use balance` OFF so over-limit requests block instead of charging Zen credits.
+- Keep Muse out of the default slot: as a mid-chain fallback it only spends Go budget while OpenRouter is throttled, which spreads usage across providers.
 - Remember Go accounting is monthly dollars with 5h=20% and weekly=50% sublimits; Muse averages ~620 fresh + ~71,400 cached + ~300 output tokens per request.
 
 ## Cron wiring
 
-- Keep one daily job (`every day at 9am`) that force-refreshes the catalog and writes `cache/free_models_ranked.json` plus `cache/free_models_ranked.md` with ready-to-paste `hermes config set` commands.
+- Keep one daily job (`every day at 9am`) that force-refreshes the catalog and writes `cache/free_models_ranked.json` plus `cache/free_models_ranked.md`, then runs `apply_model_policy.py` so the live default + fallback chain follows the new ranking (config backup each run).
 - Auto-discover the agent venv python (`installs/*/environments/*/venv/Scripts/python.exe`, newest first); never hardcode a venv path because `hermes update` rotates it.
 - Deliver `local` and keep the prompt self-contained because cron runs have no chat context.
