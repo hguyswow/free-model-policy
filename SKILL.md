@@ -1,7 +1,7 @@
 ---
 name: free-model-policy
 description: 'Use when choosing free AI models. Enforce zero-cost rule.'
-version: 1.1.0
+version: 1.2.0
 author: Hermes Agent
 license: MIT
 platforms: [linux, macos, windows]
@@ -31,6 +31,12 @@ Zero-cost model discipline for Hermes agents running on OpenRouter + OpenCode Go
 - A ranking file alone changes nothing: without `fallback_providers` Hermes fails outright on a rate limit.
 - Refresh the ranking daily from `models_dev_cache.json` via `fetch_models_dev(force_refresh=True)`; ETag makes it cheap when unchanged.
 - Never store API keys, tokens, or `sk-*` values inside this skill, snapshots, or git repos.
+
+## New machine setup (laptop / home desktop / office desktop)
+
+- `git clone` (or `git pull`) this repo, then from the repo folder run `powershell -ExecutionPolicy Bypass -File .\setup_machine.ps1`.
+- It installs this skill, sets `security.allow_data_training_tiers_noninteractive` (pass `-NoTraining` to keep Muse out), applies the default model + fallback chain (built-in ranking if the cron has not run yet), wires the 9am ranking cron to re-apply with this machine's repo path (`wire_cron.py`), and restarts the gateway.
+- Idempotent: re-run after every `git pull`. Verify with `hermes fallback list`.
 
 ## Current ranking (refresh daily, performance first)
 

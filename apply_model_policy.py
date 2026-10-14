@@ -19,6 +19,13 @@ HERMES = os.path.join(os.environ.get("LOCALAPPDATA", ""), "hermes")
 MUSE = "muse-spark-1.3-contributor"
 CODING = "cohere/north-mini-code:free"
 MAX_CHAIN = 5
+DEFAULT_RANKED = {  # mirrors "Current ranking" in SKILL.md
+    "updated_at": "built-in",
+    "ranked_openrouter": [{"id": i} for i in (
+        "poolside/laguna-s-2.1:free", "thinkingmachines/inkling:free", "thinkingmachines/inkling-small:free",
+        "nvidia/nemotron-3-ultra-550b-a55b:free", CODING)],
+    "free_opencode": [{"id": i} for i in ("longcat-2.5-preview-free", "space-bunny-free", "step-5-preview-free")],
+}
 
 
 def build(ranked, allow_training):
@@ -56,8 +63,12 @@ def main():
     yaml.preserve_quotes = True
     with open(a.config, encoding="utf-8") as f:
         cfg = yaml.load(f) or {}
-    with open(a.ranked, encoding="utf-8") as f:
-        ranked = json.load(f)
+    if os.path.exists(a.ranked):
+        with open(a.ranked, encoding="utf-8") as f:
+            ranked = json.load(f)
+    else:  # fresh machine: the daily cron has not written a ranking yet
+        print(f"note: {a.ranked} missing - using built-in ranking from SKILL.md")
+        ranked = DEFAULT_RANKED
 
     allow = bool((cfg.get("security") or {}).get("allow_data_training_tiers_noninteractive", False))
     (dp, dm), chain = build(ranked, allow)

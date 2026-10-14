@@ -17,6 +17,8 @@ hermes config set model.default "muse-spark-1.3-contributor"
 hermes config set model.provider "opencode-go"
 ```
 
+New machine (or after `git pull`): `powershell -ExecutionPolicy Bypass -File .\setup_machine.ps1` — skill install + Muse opt-in + fallback chain + cron wiring + gateway restart.
+
 Apply ranking -> default model + fallback chain (run with the Hermes venv python, needs ruamel.yaml):
 
 ```
